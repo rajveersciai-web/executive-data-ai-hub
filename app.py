@@ -193,3 +193,31 @@ with tab1:
 
         st.markdown("#### Active MRR by Plan Tier")
         st.bar_chart(mrr_df.set_index("Plan Tier")["Active MRR ($)"])
+        st.markdown("#### 🚨 High-Priority Churn Risk Alerts")
+        st.dataframe(churn_df, use_container_width=True)
+
+with tab2:
+    st.subheader("AI-Ready Enterprise Knowledge & RAG Retrieval Engine")
+    st.write("Ask a question against indexed SaaS policies (`Billing`, `Security`, `Engineering`) using TF-IDF relevance scoring:")
+
+    user_q = st.text_input("Type an employee or customer policy question:", value="How are customer databases encrypted and backed up?")
+
+    if user_q:
+        res = search_policy_rag(user_q)
+        if res:
+            top_score, best = res
+            st.success(f"**Top Match [Score: {top_score:.3f}]** | Department: `{best['dept']}` | Source: *{best['title']}*")
+            st.info(f"\"{best['text']}\"")
+        else:
+            st.warning("No matching policy chunk found.")
+
+with tab3:
+    st.subheader("Automated Crypto Market API ETL Pipeline")
+    st.markdown("""
+    * **Source:** CoinGecko Live Market REST API (`BTC`, `ETH`, `SOL`) with exponential retry resilience.
+    * **Quality Gates:** Automated `assert` checks blocking null records, negative prices, or stale timestamps.
+    * **Cloud Schedule:** Daily automated execution via GitHub Actions (`live-market-data-pipeline`).
+    """)
+    st.link_button("View System 1 Repository on GitHub", "https://github.com/rajveersciai-web/crypto-market-data-pipeline")
+    st.link_button("View System 2 Repository on GitHub", "https://github.com/rajveersciai-web/live-market-data-pipeline")
+    st.link_button("View System 3 Repository on GitHub", "https://github.com/rajveersciai-web/saas-policy-knowledge-base")
