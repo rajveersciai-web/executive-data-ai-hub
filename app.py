@@ -192,3 +192,4 @@ with tab1:
         st.dataframe(stripe_df, use_container_width=True)
 
         st.markdown("#### Active MRR by Plan Tier")
+        st.bar_chart(mrr_df.set_index("Plan Tier")["Active MRR ($)"])
