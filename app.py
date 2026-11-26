@@ -146,47 +146,50 @@ with tab1:
     if not db_url:
         st.warning("Set your Neon DATABASE_URL environment variable to load live cloud PostgreSQL tables.")
     else:
-        try:
-            conn = psycopg2.connect(db_url)
-            mrr_df = pd.read_sql_query("""
-                SELECT s.plan_tier AS "Plan Tier",
-                       COUNT(s.sub_id) AS "Active Accounts",
-                       SUM(s.monthly_price_usd) AS "Active MRR ($)"
-                FROM subscriptions s
-                WHERE s.status = 'active'
-                GROUP BY s.plan_tier
-                ORDER BY "Active MRR ($)" DESC;
-            """, conn)
+        conn = psycopg2.connect(db_url)
+        mrr_df = pd.read_sql_query("""
+            SELECT s.plan_tier AS "Plan Tier",
+                   COUNT(s.sub_id) AS "Active Accounts",
+                   SUM(s.monthly_price_usd) AS "Active MRR ($)"
+            FROM subscriptions s
+            WHERE s.status = 'active'
+            GROUP BY s.plan_tier
+            ORDER BY "Active MRR ($)" DESC;
+        """, conn)
 
-            churn_df = pd.read_sql_query("""
-                SELECT c.company_name AS "Company",
-                       c.country AS "Country",
-                       s.plan_tier AS "Plan",
-                       s.monthly_price_usd AS "At-Risk MRR ($)",
-                       p.paid_date AS "Failed Date"
-                FROM payments p
-                INNER JOIN subscriptions s ON p.sub_id = s.sub_id
-                INNER JOIN customers c ON s.customer_id = c.customer_id
-                WHERE p.payment_status = 'failed'
-                ORDER BY s.monthly_price_usd DESC;
-            """, conn)
+        churn_df = pd.read_sql_query("""
+            SELECT c.company_name AS "Company",
+                   c.country AS "Country",
+                   s.plan_tier AS "Plan",
+                   s.monthly_price_usd AS "At-Risk MRR ($)",
+                   p.paid_date AS "Failed Date"
+            FROM payments p
+            INNER JOIN subscriptions s ON p.sub_id = s.sub_id
+            INNER JOIN customers c ON s.customer_id = c.customer_id
+            WHERE p.payment_status = 'failed'
+            ORDER BY s.monthly_price_usd DESC;
+        """, conn)
 
-            stripe_df = pd.read_sql_query("""
-                SELECT c.company_name AS "Stripe Customer",
-                       c.plan_tier AS "Plan Tier",
-                       c.country AS "Country",
-                       i.amount_usd AS "Synced Invoice ($)",
-                       i.status AS "Stripe Status"
-                FROM stripe_invoices i
-                INNER JOIN stripe_customers c ON i.stripe_customer_id = c.stripe_customer_id
-                ORDER BY i.amount_usd DESC;
-            """, conn)
-            conn.close()
+        stripe_df = pd.read_sql_query("""
+            SELECT c.company_name AS "Stripe Customer",
+                   c.plan_tier AS "Plan Tier",
+                   c.country AS "Country",
+                   i.amount_usd AS "Synced Invoice ($)",
+                   i.status AS "Stripe Status"
+            FROM stripe_invoices i
+            INNER JOIN stripe_customers c ON i.stripe_customer_id = c.stripe_customer_id
+            ORDER BY i.amount_usd DESC;
+        """, conn)
+        conn.close()
 
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Total Active MRR", f"${mrr_df['Active MRR ($)'].sum():,.2f}/mo")
-            col2.metric("Revenue at Churn Risk", f"${churn_df['At-Risk MRR ($)'].sum():,.2f}/mo", delta="-2 Failed Invoices", delta_color="inverse")
-            col3.metric("Live Stripe API Sync", f"${stripe_df['Synced Invoice ($)'].sum():,.2f}", delta=f"{len(stripe_df)} Live Invoices")
-            col4.metric("SQL Quality Gates", "3 / 3 PASSED", delta="0 Orphan Records")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Total Active MRR", f"${mrr_df['Active MRR ($)'].sum():,.2f}/mo")
+        col2.metric("Revenue at Churn Risk", f"${churn_df['At-Risk MRR ($)'].sum():,.2f}/mo", delta="-2 Failed Invoices", delta_color="inverse")
+        col3.metric("Live Stripe API Sync", f"${stripe_df['Synced Invoice ($)'].sum():,.2f}", delta=f"{len(stripe_df)} Live Invoices")
+        col4.metric("SQL Quality Gates", "3 / 3 PASSED", delta="0 Orphan Records")
 
-            st.markdown("#### 💳 Live Stripe API ➔ Neon Cloud PostgreSQL Synced Records")
+        st.markdown("#### 💳 Live Stripe API ➔ Neon Cloud PostgreSQL Synced Records")
+        st.dataframe(stripe_df, use_container_width=True)
+
+        col_left, col_right = st.columns(2)
+        with col_left:
