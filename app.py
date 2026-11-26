@@ -191,5 +191,4 @@ with tab1:
         st.markdown("#### 💳 Live Stripe API ➔ Neon Cloud PostgreSQL Synced Records")
         st.dataframe(stripe_df, use_container_width=True)
 
-        col_left, col_right = st.columns(2)
-        with col_left:
+        st.markdown("#### Active MRR by Plan Tier")
